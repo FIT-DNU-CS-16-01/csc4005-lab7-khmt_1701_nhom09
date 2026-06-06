@@ -15,6 +15,10 @@ models/*
 outputs/*
 !outputs/.gitkeep
 
+# Dataset and Lab6 (external folders)
+MIT_Indoor_Scenes_2009/
+csc4005-lab6-onnx-starter-kit-khmt_1701_nhom09/
+
 *.zip
 *.tar
 *.tar.gz
