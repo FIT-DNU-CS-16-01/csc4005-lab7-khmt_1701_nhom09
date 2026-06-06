@@ -1,0 +1,21 @@
+{
+  "teacher_checkpoint": "checkpoints/teacher_vit_best_model.pt",
+  "student_model": "mobilenet_v2",
+  "data_dir": "data/mit_indoor_smartcampus_5",
+  "classes": [
+    "classroom",
+    "computerroom",
+    "library",
+    "corridor",
+    "office"
+  ],
+  "img_size": 224,
+  "epochs": 10,
+  "batch_size": 16,
+  "lr": 0.001,
+  "weight_decay": 0.0001,
+  "alpha": 0.5,
+  "temperature": 4.0,
+  "project": "csc4005-lab7-compression",
+  "run_name": "kd_mobilenet_student"
+}

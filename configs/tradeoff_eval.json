@@ -1,0 +1,8 @@
+{
+  "baseline_eval": "outputs/eval_baseline_onnx.json",
+  "compressed_eval": "outputs/eval_quantized_onnx.json",
+  "baseline_benchmark": "outputs/benchmark_baseline.csv",
+  "compressed_benchmark": "outputs/benchmark_quantization.csv",
+  "output_csv": "outputs/tradeoff_table.csv",
+  "output_md": "outputs/tradeoff_table.md"
+}

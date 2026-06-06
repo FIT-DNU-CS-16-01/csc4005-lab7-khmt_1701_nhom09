@@ -1,0 +1,6 @@
+{
+  "input_onnx": "models/vit_smartcampus.onnx",
+  "output_onnx": "models/vit_smartcampus_dynamic_int8.onnx",
+  "mode": "dynamic",
+  "weight_type": "QInt8"
+}
