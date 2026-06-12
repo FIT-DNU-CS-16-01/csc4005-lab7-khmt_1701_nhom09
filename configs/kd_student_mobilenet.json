@@ -1,7 +1,7 @@
 {
   "teacher_checkpoint": "checkpoints/teacher_vit_best_model.pt",
   "student_model": "mobilenet_v2",
-  "data_dir": "data/mit_indoor_smartcampus_5",
+  "data_dir": "data/indoorCVPR_09/Images",
   "classes": [
     "classroom",
     "computerroom",

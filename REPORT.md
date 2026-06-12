@@ -1,131 +1,160 @@
-# CSC4005 Lab 7 Report – Compression: KD + Quantization Trade-offs
+# Báo cáo CSC4005 Lab 7 - Nén mô hình: KD + đánh đổi khi lượng tử hóa
 
 ## 1. Thông tin
 
-- Họ tên: Nguyễn Hoàng Anh
-- Mã sinh viên: 1771040002
-- Lớp: KHMT 1701
-- Link GitHub repo: https://github.com/FIT-DNU-CS-16-01/csc4005-lab7-khmt_1701_nhom09.git
-- Kỹ thuật chọn: Quantization
-- Link W&B nếu dùng KD: 
-- Link model nếu không commit trực tiếp: 
+- Thành viên nhóm:
 
-## 2. Mô tả baseline model
+| Họ tên | Mã sinh viên | Lớp | Phụ trách |
+|---|---|---|---|
+| Lưu Thanh Tùng | 1771040029 | KHMT-1701 | Hướng B (chưng cất tri thức) và tổng hợp báo cáo |
+| Nguyễn Hoàng Anh | 1771040002 | KHMT-1701 | Hướng A (lượng tử hóa) |
+
+- Link GitHub repo: https://github.com/FIT-DNU-CS-16-01/csc4005-lab7-khmt_1701_nhom09.git
+- Kỹ thuật đã thực hiện:
+  - Hướng A: lượng tử hóa
+  - Hướng B: chưng cất tri thức (bổ sung góc nhìn, không thay thế Hướng A)
+- Link W&B project (Hướng B): https://wandb.ai/thanhtung-contact-official-/csc4005-lab7-compression
+- Link W&B run được chọn: https://wandb.ai/thanhtung-contact-official-/csc4005-lab7-compression/runs/a6j6bg2h
+
+## 2. Mô tả mô hình gốc
 
 | Nội dung | Giá trị |
 |---|---|
-| Bài toán | Smart Campus Scene Classification |
-| Dataset | MIT Indoor Scenes 67 subset 5 lớp |
+| Bài toán | Phân loại cảnh Smart Campus |
+| Dataset | MIT Indoor Scenes 67, tập con 5 lớp |
 | Số lớp | 5 (classroom, computerroom, library, corridor, office) |
 | Số mẫu | 789 |
-| Baseline model | Vision Transformer (ViT-B/16) fine-tuned |
-| Baseline format | ONNX (exported từ Lab 6) |
-| Baseline checkpoint/ONNX | models/vit_smartcampus.onnx |
-| Baseline model size | 327.72 MB |
+| Mô hình gốc | Vision Transformer (ViT-B/16) fine-tuned |
+| Định dạng mô hình gốc | ONNX |
+| File mô hình gốc | models/vit_smartcampus.onnx |
+| Kích thước mô hình gốc | 327.72 MB |
 
-## 3. Kỹ thuật nén đã chọn
+## 3. Hướng A - Lượng tử hóa
 
-### Quantization
+### 3.1 Cấu hình và artefact
 
 | Thông tin | Giá trị |
 |---|---|
-| Loại quantization | Dynamic |
+| Loại lượng tử hóa | Dynamic |
 | Input model | models/vit_smartcampus.onnx |
 | Output model | models/vit_smartcampus_dynamic_int8.onnx |
-| Dạng dữ liệu sau nén | INT8 (QInt8) |
 | Công cụ | onnxruntime.quantization.quantize_dynamic |
+| Eval baseline | outputs/eval_baseline_onnx.json |
+| Eval quantized | outputs/eval_quantized_onnx.json |
+| Benchmark | outputs/benchmark_quantization.csv |
+| Trade-off | outputs/tradeoff_table.csv, outputs/tradeoff_table.md |
 
-Mô tả ngắn:
+### 3.2 Kết quả Hướng A
 
-```text
-Dynamic quantization được áp dụng lên model ONNX baseline (ViT-B/16).
-Phương pháp này chuyển trọng số từ FP32 sang INT8 tại thời điểm inference,
-giúp giảm kích thước model mà không cần calibration data.
-Trọng số được quantize, activation vẫn ở FP32 nhưng tính toán dùng kernel INT8 khi có thể.
-```
-
-## 4. Kết quả đánh giá
-
-| Model | Accuracy | Macro-F1 | Model size (MB) |
-|---|---:|---:|---:|
-| Baseline (FP32) | 0.9835 | 0.9790 | 327.72 |
-| Quantized (INT8) | 0.9772 | 0.9689 | 83.24 |
-
-Nhận xét:
-
-- Accuracy giảm 0.63 điểm phần trăm (98.35% → 97.72%).
-- Macro-F1 giảm 1.01 điểm phần trăm (97.90% → 96.89%).
-- Mức giảm này **hoàn toàn chấp nhận được** trong bài toán Smart Campus vì:
-  - Accuracy vẫn trên 97%, đủ tin cậy cho phân loại cảnh.
-  - Trade-off chưa đến 1% accuracy để đổi lấy 74.6% giảm kích thước model.
-
-## 5. Kết quả benchmark
-
-| Model | Batch size | Mean latency (ms) | P95 latency (ms) | Throughput (img/s) | Size (MB) |
+| Model | Accuracy | Macro-F1 | Mean latency @bs=1 (ms) | Throughput @bs=1 (img/s) | Size (MB) |
 |---|---:|---:|---:|---:|---:|
-| Baseline | 1 | 77.93 | 81.64 | 12.83 | 327.72 |
-| Quantized | 1 | 46.64 | 50.88 | 21.44 | 83.24 |
-| Baseline | 4 | 324.77 | 342.50 | 12.32 | 327.72 |
-| Quantized | 4 | 183.59 | 199.15 | 21.79 | 83.24 |
-| Baseline | 8 | 676.94 | 742.35 | 11.82 | 327.72 |
-| Quantized | 8 | 398.60 | 462.81 | 20.07 | 83.24 |
+| Baseline | 0.9835 | 0.9790 | 77.93 | 12.83 | 327.72 |
+| Quantized INT8 | 0.9772 | 0.9689 | 46.64 | 21.44 | 83.24 |
 
-## 6. Bảng trade-off
+Nhận xét nhanh Hướng A:
 
-| Model | Accuracy | Macro-F1 | Mean latency @bs=1 | Throughput @bs=1 | Size (MB) | Nhận xét |
-|---|---:|---:|---:|---:|---:|---|
-| Baseline | 0.9835 | 0.9790 | 77.93 ms | 12.83 img/s | 327.72 | Model gốc, accuracy cao nhất |
-| Quantized INT8 | 0.9772 | 0.9689 | 46.64 ms | 21.44 img/s | 83.24 | Nhẹ hơn 74.6%, nhanh hơn 40%, accuracy giảm <1% |
+- Accuracy giảm 0.64%.
+- Macro-F1 giảm 1.03%.
+- Latency giảm 40.15%.
+- Throughput tăng 67.09%.
+- Kích thước mô hình giảm 74.60%.
 
-## 7. Phân tích
+## 4. Hướng B - Chưng cất tri thức (bổ sung)
 
-1. **Mô hình sau nén nhỏ hơn bao nhiêu phần trăm?**
-   - Giảm 74.6% (327.72 MB → 83.24 MB).
+### 4.1 Cấu hình và artefact
 
-2. **Latency giảm hay tăng?**
-   - Giảm 40.15% ở batch size 1 (77.93 ms → 46.64 ms).
-   - Giảm 43.5% ở batch size 4.
-   - Giảm 41.1% ở batch size 8.
+| Thông tin | Giá trị |
+|---|---|
+| Teacher checkpoint | checkpoints/teacher_vit_best_model.pt |
+| Student model | MobileNetV2 |
+| Không gian tìm kiếm KD | alpha in {0.2, 0.5, 0.8}; temperature in {1.0, 2.0, 4.0}; epochs = 50 |
+| Batch size train | 16 |
+| Kết quả grid | outputs/kd_grid_search_full.csv, outputs/kd_grid_search_full.json |
+| Cấu hình được chọn | A50_T20_E50 (alpha=0.5, temperature=2.0, epochs=50) |
+| Student checkpoint tốt nhất sau grid | outputs/A50_T20_E50/student_best.pt |
+| Student checkpoint (thực thi Hướng B trước đó) | outputs/kd_mobilenet_student/student_best.pt |
+| Student ONNX đã chọn | models/student_mobilenet_kd_A50_T20_E50.onnx |
+| Eval student PyTorch (đã chọn) | outputs/eval_kd_student_A50_T20_E50.json |
+| Eval student ONNX (đã chọn) | outputs/eval_kd_student_onnx_A50_T20_E50.json |
+| Benchmark (đã chọn) | outputs/benchmark_kd_A50_T20_E50.csv |
+| Trade-off (đã chọn) | outputs/tradeoff_table_kd_A50_T20_E50.csv, outputs/tradeoff_table_kd_A50_T20_E50.md |
 
-3. **Throughput thay đổi thế nào?**
-   - Tăng 67.1% ở batch size 1 (12.83 → 21.44 img/s).
-   - Cải thiện đáng kể ở mọi batch size.
+### 4.2 Kết quả full-grid (9 cấu hình)
 
-4. **Accuracy/F1 giảm nhiều không?**
-   - Accuracy giảm 0.64%, Macro-F1 giảm 1.03%. Mức giảm rất nhỏ.
+| Run | Alpha | Temperature | Epochs | Best val macro-F1 |
+|---|---:|---:|---:|---:|
+| A50_T20_E50 | 0.5 | 2.0 | 50 | 0.9521 |
+| A80_T40_E50 | 0.8 | 4.0 | 50 | 0.9506 |
+| A50_T40_E50 | 0.5 | 4.0 | 50 | 0.9431 |
+| A80_T10_E50 | 0.8 | 1.0 | 50 | 0.9429 |
+| A20_T40_E50 | 0.2 | 4.0 | 50 | 0.9411 |
+| A80_T20_E50 | 0.8 | 2.0 | 50 | 0.9337 |
+| A20_T20_E50 | 0.2 | 2.0 | 50 | 0.9264 |
+| A50_T10_E50 | 0.5 | 1.0 | 50 | 0.9204 |
+| A20_T10_E50 | 0.2 | 1.0 | 50 | 0.9033 |
 
-5. **Nếu triển khai trên CPU hoặc edge device, bạn có chọn compressed model không?**
-   - **Có.** Model quantized INT8 là lựa chọn tốt nhất cho triển khai CPU:
-     - Nhẹ hơn 4x → dễ deploy trên thiết bị hạn chế bộ nhớ.
-     - Nhanh hơn 40% → đáp ứng yêu cầu real-time tốt hơn.
-     - Accuracy gần như không đổi → chất lượng phân loại vẫn đáng tin cậy.
+Nhận xét từ grid search:
 
-6. **Nếu không chọn, lý do là gì?**
-   - Không áp dụng. Trong trường hợp này, trade-off hoàn toàn có lợi cho quantized model.
+- Chọn cấu hình tốt nhất theo tiêu chí best val macro-F1: A50_T20_E50 (0.9521).
+- Độ nhạy tham số lớn: chênh lệch giữa cấu hình tốt nhất và thấp nhất là 0.0488 macro-F1 (4.88 điểm phần trăm).
+- Temperature cao hơn có xu hướng hữu ích trên bộ dữ liệu này: T=4.0 cho trung bình kết quả cao, nhưng điểm cao nhất toàn bộ lại nằm ở T=2.0.
 
-## 8. Khi nào chọn KD, khi nào chọn Quantization?
+### 4.3 Tại sao chọn A50_T20_E50? (cái được, cái mất)
 
-- **Quantization phù hợp khi:**
-  - Đã có model train tốt (ONNX/PyTorch) và muốn giảm kích thước/tăng tốc nhanh.
-  - Không muốn train lại.
-  - Triển khai trên CPU, cần giảm memory footprint.
-  - Chấp nhận kiểm tra lại accuracy sau nén (thường giảm rất ít với dynamic quantization).
+Tham số được chọn:
 
-- **KD phù hợp khi:**
-  - Teacher model quá lớn, cần student architecture nhỏ hơn hẳn (ví dụ MobileNet).
-  - Muốn model chạy trên edge device cực kỳ hạn chế tài nguyên.
-  - Sẵn sàng train lại và có đủ dữ liệu.
-  - Muốn throughput cải thiện nhiều hơn nữa (student nhỏ hơn cả quantized ViT).
+- Alpha = 0.5 (cân bằng giữa hard label và soft label)
+- Temperature = 2.0 (làm mềm phân bố teacher vừa đủ)
+- Epochs = 50
 
-- **Nếu được làm lại cho Smart Campus:**
-  - Quantization là lựa chọn thực tế nhất: nhanh triển khai, kết quả tốt ngay, không cần train lại.
-  - KD có giá trị nếu cần deploy trên camera edge với RAM rất hạn chế (<50MB).
+Lý do chọn:
 
-## 9. Kết luận
+- Đây là cấu hình đạt best val macro-F1 cao nhất trong 9 cấu hình đã chạy (0.9521).
+- Alpha=0.5 tránh 2 cực đoan:
+  - Nếu alpha thấp (0.2), mô hình học theo teacher quá nhiều, dễ bị hút theo sai lệch teacher trên dữ liệu nhỏ.
+  - Nếu alpha cao (0.8), mô hình nghiêng về hard label nhiều hơn, lợi ích KD có thể giảm.
+- Temperature=2.0 tạo mức độ "làm mềm" vừa đủ để student học quan hệ giữa các lớp mà không làm loãng thông tin quá mức.
 
-- Đã áp dụng **ONNX Dynamic Quantization (FP32 → INT8)** cho ViT-B/16 baseline.
-- Model giảm **74.6% kích thước** (327.72 → 83.24 MB).
-- Latency giảm **~40%** trên CPU, throughput tăng **~67%**.
-- Accuracy chỉ giảm **0.64%**, Macro-F1 giảm **1.03%** – mức giảm không đáng kể.
-- **Trade-off quan trọng nhất:** đổi <1% accuracy lấy 4x nhỏ hơn và 1.7x nhanh hơn.
-- **Bài học:** Dynamic quantization là kỹ thuật compression "low-hanging fruit" – dễ áp dụng, hiệu quả cao, rủi ro thấp. Nên luôn thử trước khi xem xét các phương pháp phức tạp hơn.
+Cái được:
+
+- Đạt chất lượng val macro-F1 cao nhất trong tập thực nghiệm.
+- Vẫn giữ được lợi thế hệ thống của Hướng KD (student nhỏ, nhẹ, nhanh trên CPU).
+
+Cái mất / đánh đổi:
+
+- Chi phí huấn luyện tăng rõ ràng do phải sweep 9 cấu hình x 50 epochs.
+- Chọn theo val macro-F1 tối ưu có nguy cơ overfit vào tập val; cần kiểm tra thêm trên tập test/production để xác nhận độ bền vững.
+- Nếu ưu tiên tính ổn định hơn điểm tối đa, có thể cân nhắc A80_T40_E50 (0.9506) vì kết quả rất sát nút, nhưng quyết định hiện tại ưu tiên điểm cao nhất.
+
+### 4.4 Kết quả Hướng B với cấu hình được chọn (A50_T20_E50)
+
+| Model | Accuracy | Macro-F1 | Mean latency @bs=1 (ms) | Throughput @bs=1 (img/s) | Size (MB) |
+|---|---:|---:|---:|---:|---:|
+| Baseline | 0.9835 | 0.9790 | 194.56 | 5.14 | 327.72 |
+| KD Student A50_T20_E50 (ONNX) | 0.9861 | 0.9819 | 5.33 | 187.66 | 8.48 |
+
+Nhận xét nhanh Hướng B:
+
+- Accuracy tăng 0.26%.
+- Macro-F1 tăng 0.30%.
+- Latency giảm 97.26%.
+- Throughput tăng 3551.10%.
+- Kích thước mô hình giảm 97.41%.
+
+Lưu ý benchmark Hướng B:
+
+- Benchmark Hướng B được chạy với warmup=5 và repeat=10 để đảm bảo hoàn tất ổn định trong môi trường hiện tại.
+- Vì điều kiện benchmark khác Hướng A, cần ưu tiên so sánh nội bộ trong từng hướng và dùng bảng tổng hợp để kết luận theo bối cảnh triển khai.
+
+## 5. Bảng tổng hợp hai hướng
+
+| Hướng | Accuracy sau nén | Macro-F1 sau nén | Latency @bs=1 (ms) | Throughput @bs=1 (img/s) | Size sau nén (MB) |
+|---|---:|---:|---:|---:|---:|
+| A - Lượng tử hóa | 0.9772 | 0.9689 | 46.64 | 21.44 | 83.24 |
+| B - KD (A50_T20_E50) | 0.9861 | 0.9819 | 5.33 | 187.66 | 8.48 |
+
+Nhận xét tổng hợp:
+
+- Hướng A dễ triển khai nhanh, không cần train lại, trade-off tốt và ổn định.
+- Hướng B là góc nhìn bổ sung giá trị cao, cho mô hình gọn hơn và nhanh hơn đáng kể trong khi độ chính xác vẫn giữ tốt.
+- Hai hướng bổ trợ cho nhau: Hướng A phù hợp khi cần nhanh; Hướng B phù hợp khi ưu tiên tối ưu mạnh cho edge/CPU.

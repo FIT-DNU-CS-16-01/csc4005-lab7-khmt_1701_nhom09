@@ -31,6 +31,8 @@ def parse_args():
     parser.add_argument("--temperature", type=float, default=4.0)
     parser.add_argument("--project", type=str, default="csc4005-lab7-compression")
     parser.add_argument("--run_name", type=str, default="kd_student")
+    parser.add_argument("--wandb_group", type=str, default=None)
+    parser.add_argument("--wandb_tags", nargs="*", default=None)
     parser.add_argument("--use_wandb", action="store_true")
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
@@ -104,7 +106,13 @@ def main():
     wandb_run = None
     if args.use_wandb:
         import wandb
-        wandb_run = wandb.init(project=args.project, name=args.run_name, config=vars(args))
+        wandb_run = wandb.init(
+            project=args.project,
+            name=args.run_name,
+            group=args.wandb_group,
+            tags=args.wandb_tags,
+            config=vars(args),
+        )
 
     best_val_f1 = -1.0
     best_path = output_dir / "student_best.pt"
